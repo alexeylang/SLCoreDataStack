@@ -401,21 +401,19 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
         NSURL *modelURL = [NSURL fileURLWithPath:modelPath];
         targetModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
 
-        int targetVersion = [[[targetModel versionIdentifiers] anyObject] intValue];
-        if ( targetVersion <= sourceVersion )
-        {
-            continue;
-        }
-
         mappingModel = [NSMappingModel mappingModelFromBundles:bundles
                                                 forSourceModel:sourceModel
                                               destinationModel:targetModel];
 
         if ( !mappingModel )
         {
-            mappingModel = [NSMappingModel inferredMappingModelForSourceModel:sourceModel
-                                                             destinationModel:targetModel
-                                                                        error:NULL];
+            int targetVersion = [[[targetModel versionIdentifiers] anyObject] intValue];
+            if ( targetVersion >= sourceVersion )
+            {
+                mappingModel = [NSMappingModel inferredMappingModelForSourceModel:sourceModel
+                                                                 destinationModel:targetModel
+                                                                            error:NULL];
+            }
         }
 
         if ( mappingModel )
