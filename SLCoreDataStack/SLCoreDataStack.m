@@ -453,10 +453,19 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 - (void)_managedObjectContextDidSaveNotificationCallback:(NSNotification *)notification
 {
     NSManagedObjectContext *changedContext = notification.object;
-    
-    for (NSManagedObjectContext *otherContext in @[ self.mainThreadManagedObjectContext, self.backgroundThreadManagedObjectContext ]) {
-        if (changedContext.persistentStoreCoordinator == otherContext.persistentStoreCoordinator && otherContext != changedContext) {
+    for (NSManagedObjectContext *otherContext in @[self.mainThreadManagedObjectContext, self.backgroundThreadManagedObjectContext])
+    {
+        if ( changedContext.persistentStoreCoordinator == otherContext.persistentStoreCoordinator && otherContext != changedContext )
+        {
             [otherContext performBlock:^{
+                // Explicitly unfault all updated objects.
+                NSArray *updatedObjects = [[notification.userInfo objectForKey:@"updated"] allObjects];
+                for (NSInteger index = 0; index < [updatedObjects count]; index++)
+                {
+                    NSManagedObjectID *objectID = [updatedObjects[index] objectID];
+                    [otherContext existingObjectWithID:objectID error:NULL];
+                }
+                // Merge notification.
                 [otherContext mergeChangesFromContextDidSaveNotification:notification];
             }];
         }
