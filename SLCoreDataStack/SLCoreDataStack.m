@@ -65,8 +65,10 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 
 - (NSURL *)databaseRootURL
 {
-    return [[NSFileManager defaultManager] URLsForDirectory:NSLibraryDirectory
-                                                  inDomains:NSUserDomainMask].lastObject;
+    NSString *applicationName = [[[NSBundle mainBundle] infoDictionary] valueForKey:(NSString *)kCFBundleNameKey];
+    NSURL *appSupportURL = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory
+                                                                  inDomains:NSUserDomainMask].lastObject;
+    return [appSupportURL URLByAppendingPathComponent:applicationName];
 }
 
 - (NSURL *)dataStoreURL
