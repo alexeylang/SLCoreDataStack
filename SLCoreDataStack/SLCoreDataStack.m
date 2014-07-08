@@ -354,7 +354,9 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
         return NO;
     }
 
-    if ([destinationModel isConfiguration:nil compatibleWithStoreMetadata:sourceStoreMetadata]) {
+    int destinationVersion = [[[destinationModel versionIdentifiers] anyObject] intValue];
+    int sourceVersion = [[sourceStoreMetadata[NSStoreModelVersionIdentifiersKey] lastObject] intValue];
+    if ([destinationModel isConfiguration:nil compatibleWithStoreMetadata:sourceStoreMetadata] && destinationVersion == sourceVersion) {
         *error = nil;
         return YES;
     }
@@ -398,11 +400,26 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
     for (modelPath in objectModelPaths) {
         NSURL *modelURL = [NSURL fileURLWithPath:modelPath];
         targetModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
+
+        int targetVersion = [[[targetModel versionIdentifiers] anyObject] intValue];
+        if ( targetVersion <= sourceVersion )
+        {
+            continue;
+        }
+
         mappingModel = [NSMappingModel mappingModelFromBundles:bundles
                                                 forSourceModel:sourceModel
                                               destinationModel:targetModel];
 
-        if (mappingModel) {
+        if ( !mappingModel )
+        {
+            mappingModel = [NSMappingModel inferredMappingModelForSourceModel:sourceModel
+                                                             destinationModel:targetModel
+                                                                        error:NULL];
+        }
+
+        if ( mappingModel )
+        {
             break;
         }
     }
