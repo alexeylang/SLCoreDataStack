@@ -103,19 +103,46 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 
 - (BOOL)requiresMigration
 {
-    NSPersistentStoreCoordinator *persistentStoreCoordinator = nil;
+    return [self requiresMigrationFromDataStoreAtURL:self.dataStoreURL toDestinationModel:self.managedObjectModel];
+}
 
-    NSURL *storeURL = self.dataStoreURL;
-    NSManagedObjectModel *managedObjectModel = self.managedObjectModel;
+- (BOOL)requiresMigrationFromDataStoreAtURL:(NSURL *)dataStoreURL toDestinationModel:(NSManagedObjectModel *)destinationModel
+{
+    NSString *type = NSSQLiteStoreType;
+    NSDictionary *sourceStoreMetadata = [NSPersistentStoreCoordinator metadataForPersistentStoreOfType:type
+                                                                                                   URL:dataStoreURL
+                                                                                                 error:NULL];
 
-    NSError *error = nil;
-    persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:managedObjectModel];
-    if (![persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
-
-        return error.code == NSPersistentStoreIncompatibleVersionHashError;
+    if ( !sourceStoreMetadata )
+    {
+        return NO;
     }
 
-    return NO;
+    int destinationVersion = [[[destinationModel versionIdentifiers] anyObject] intValue];
+    int sourceVersion = [[sourceStoreMetadata[NSStoreModelVersionIdentifiersKey] lastObject] intValue];
+    return ![destinationModel isConfiguration:nil compatibleWithStoreMetadata:sourceStoreMetadata] || destinationVersion != sourceVersion;
+}
+
+- (BOOL)mergeJournalToDataStoreAtURL:(NSURL *)dataStoreURL
+{
+    NSDictionary *sourceStoreMetadata = [NSPersistentStoreCoordinator metadataForPersistentStoreOfType:NSSQLiteStoreType
+                                                                                                   URL:dataStoreURL
+                                                                                                 error:NULL];
+    if ( !sourceStoreMetadata )
+    {
+        return NO;
+    }
+
+    NSManagedObjectModel *sourceModel = [NSManagedObjectModel mergedModelFromBundles:@[self.bundle]
+                                                                    forStoreMetadata:sourceStoreMetadata];
+
+    NSPersistentStoreCoordinator *persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:sourceModel];
+    NSPersistentStore *persistentStore = [persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
+                                                                                  configuration:nil
+                                                                                            URL:dataStoreURL
+                                                                                        options:@{NSSQLitePragmasOption : @{@"journal_mode" : @"delete"}}
+                                                                                          error:NULL];
+    return persistentStore != nil;
 }
 
 + (instancetype)sharedInstance
@@ -317,20 +344,19 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 
         NSError *error = nil;
         _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:managedObjectModel];
-        // first try to migrate to the new store
-        if (![self _performMigrationFromDataStoreAtURL:storeURL toDestinationModel:managedObjectModel error:&error]) {
-            // migration was not successful => delete database and continue
-            [[NSFileManager defaultManager] removeItemAtURL:storeURL error:NULL];
+        if ( [self requiresMigrationFromDataStoreAtURL:storeURL toDestinationModel:managedObjectModel] )
+        {
+            [self mergeJournalToDataStoreAtURL:storeURL];
 
-            if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
-                NSAssert(NO, @"Could not add persistent store: %@", error);
+            if ( ![self _performMigrationFromDataStoreAtURL:storeURL toDestinationModel:managedObjectModel error:&error] )
+            {
+                [[NSFileManager defaultManager] removeItemAtURL:storeURL error:NULL];
             }
-        } else {
-            // migration was successful, just add the store
-            if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
-                // unable to add store, fail
-                NSAssert(NO, @"Could not add persistent store: %@", error);
-            }
+        }
+
+        if ( ![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error] )
+        {
+            NSAssert(NO, @"Could not add persistent store: %@", error);
         }
     }
 
