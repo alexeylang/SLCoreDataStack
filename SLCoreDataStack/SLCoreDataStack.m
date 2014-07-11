@@ -428,7 +428,7 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
         targetModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
 
         int targetVersion = [[[targetModel versionIdentifiers] anyObject] intValue];
-        if ( targetVersion <= sourceVersion )
+        if ( targetVersion != sourceVersion + 1 )
         {
             continue;
         }
