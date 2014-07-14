@@ -49,7 +49,7 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 
 - (id)mainThreadMergePolicy
 {
-    return NSMergeByPropertyObjectTrumpMergePolicy;
+    return NSMergeByPropertyStoreTrumpMergePolicy;
 }
 
 - (id)backgroundThreadMergePolicy
