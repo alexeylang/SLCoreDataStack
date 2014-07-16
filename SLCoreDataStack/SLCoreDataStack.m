@@ -468,6 +468,8 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
     NSString *destinationPath = [NSString stringWithFormat:@"%@.%@.%@", storePath, modelName, storeExtension];
     NSURL *destinationURL = [NSURL fileURLWithPath:destinationPath];
 
+    [[NSFileManager defaultManager] removeItemAtURL:destinationURL error:NULL];
+
     if (![migrationManager migrateStoreFromURL:dataStoreURL type:type options:nil withMappingModel:mappingModel toDestinationURL:destinationURL destinationType:type destinationOptions:nil error:error]) {
         return NO;
     }
