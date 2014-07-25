@@ -135,6 +135,10 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 
     NSManagedObjectModel *sourceModel = [NSManagedObjectModel mergedModelFromBundles:@[self.bundle]
                                                                     forStoreMetadata:sourceStoreMetadata];
+    if ( !sourceModel )
+    {
+        return NO;
+    }
 
     NSPersistentStoreCoordinator *persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:sourceModel];
     NSPersistentStore *persistentStore = [persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
