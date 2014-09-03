@@ -37,8 +37,6 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 @property (nonatomic, readonly) NSURL *_dataStoreRootURL;
 @property (nonatomic, readonly) BOOL requiresMigration;
 
-@property (nonatomic, readonly) NSURL *dataStoreURL;
-
 @end
 
 

@@ -37,6 +37,8 @@ enum {
 
 @interface SLCoreDataStack : NSObject
 
+@property (nonatomic, readonly) NSURL *dataStoreURL;
+
 @property (nonatomic, strong) NSManagedObjectModel *managedObjectModel;
 @property (nonatomic, strong) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 
