@@ -367,6 +367,33 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
     return _persistentStoreCoordinator;
 }
 
+- (void)removePersistentStoreCoordinator
+{
+    [_mainThreadManagedObjectContext lock];
+    [_mainThreadManagedObjectContext reset];
+
+    [_backgroundThreadManagedObjectContext lock];
+    [_backgroundThreadManagedObjectContext reset];
+
+    for (NSPersistentStore *store in [_persistentStoreCoordinator persistentStores])
+    {
+        NSError *error = nil;
+        if ( ![_persistentStoreCoordinator removePersistentStore:store error:&error] )
+        {
+            NSAssert(NO, @"Could not remove persistent store: %@", error);
+            return;
+        }
+    }
+
+    [_backgroundThreadManagedObjectContext unlock];
+    [_mainThreadManagedObjectContext unlock];
+
+    _persistentStoreCoordinator = nil;
+
+    _backgroundThreadManagedObjectContext = nil;
+    _mainThreadManagedObjectContext = nil;
+}
+
 #pragma mark - private implementation ()
 
 - (BOOL)_performMigrationFromDataStoreAtURL:(NSURL *)dataStoreURL

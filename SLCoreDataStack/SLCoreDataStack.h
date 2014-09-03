@@ -87,4 +87,9 @@ enum {
 + (void)migrateSubclassesWithProgressHandler:(void(^)(SLCoreDataStack *currentMigratingSubclass))progressHandler
                            completionHandler:(dispatch_block_t)completionHandler;
 
+/**
+ Releases existent managed object contexts, persistent store and persistent store coordinator.
+ */
+- (void)removePersistentStoreCoordinator;
+
 @end
