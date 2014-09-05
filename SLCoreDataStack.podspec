@@ -1,11 +1,11 @@
 Pod::Spec.new do |spec|
   spec.name          = 'SLCoreDataStack'
   spec.version       = '0.3.1'
-  spec.platform      = :ios, '5.0'
+  spec.platforms     = { :ios => '5.0', :osx => '10.7' }
   spec.license       = 'MIT'
   spec.source        = { :git => 'https://github.com/OliverLetterer/SLCoreDataStack.git', :tag => spec.version.to_s }
   spec.source_files  = 'SLCoreDataStack'
-  spec.frameworks    = 'Foundation', 'CoreData', 'UIKit'
+  spec.frameworks    = 'Foundation', 'CoreData'
   spec.requires_arc  = true
   spec.homepage      = 'https://github.com/OliverLetterer/SLCoreDataStack'
   spec.summary       = 'CoreData stack managing independent 2 NSManagedObjectContext instances.'
