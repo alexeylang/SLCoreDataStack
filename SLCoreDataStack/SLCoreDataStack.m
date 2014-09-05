@@ -173,6 +173,7 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 - (id)init
 {
     if (self = [super init]) {
+#if TARGET_OS_IPHONE
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(_automaticallySaveDataStore)
                                                      name:UIApplicationWillTerminateNotification
@@ -182,6 +183,13 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
                                                  selector:@selector(_automaticallySaveDataStore)
                                                      name:UIApplicationDidEnterBackgroundNotification
                                                    object:nil];
+#else
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_automaticallySaveDataStore)
+                                                     name:NSApplicationWillTerminateNotification
+                                                   object:nil];
+#endif
+
     }
     return self;
 }
