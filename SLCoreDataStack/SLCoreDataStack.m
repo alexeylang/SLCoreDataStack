@@ -531,7 +531,7 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
     {
         if ( changedContext.persistentStoreCoordinator == otherContext.persistentStoreCoordinator && otherContext != changedContext )
         {
-            [otherContext performBlock:^{
+            [otherContext performBlockAndWait:^{
                 // Explicitly unfault all updated objects.
                 NSArray *updatedObjects = [[notification.userInfo objectForKey:@"updated"] allObjects];
                 for (NSInteger index = 0; index < [updatedObjects count]; index++)
