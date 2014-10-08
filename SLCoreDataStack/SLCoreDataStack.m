@@ -168,32 +168,6 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
     }
 }
 
-#pragma mark - Initialization
-
-- (id)init
-{
-    if (self = [super init]) {
-#if TARGET_OS_IPHONE
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(_automaticallySaveDataStore)
-                                                     name:UIApplicationWillTerminateNotification
-                                                   object:nil];
-
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(_automaticallySaveDataStore)
-                                                     name:UIApplicationDidEnterBackgroundNotification
-                                                   object:nil];
-#else
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(_automaticallySaveDataStore)
-                                                     name:NSApplicationWillTerminateNotification
-                                                   object:nil];
-#endif
-
-    }
-    return self;
-}
-
 #pragma mark - Memory management
 
 - (void)dealloc
@@ -543,22 +517,6 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
                 [otherContext mergeChangesFromContextDidSaveNotification:notification];
             }];
         }
-    }
-}
-
-- (void)_automaticallySaveDataStore
-{
-    for (NSManagedObjectContext *context in @[ self.mainThreadManagedObjectContext, self.backgroundThreadManagedObjectContext ]) {
-        if (!context.hasChanges) {
-            continue;
-        }
-
-        [context performBlock:^{
-            NSError *error = nil;
-            if (![context save:&error]) {
-                NSLog(@"WARNING: Error while automatically saving changes of data store of class %@: %@", self, error);
-            }
-        }];
     }
 }
 
