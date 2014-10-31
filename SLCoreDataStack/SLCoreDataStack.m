@@ -27,6 +27,11 @@
 #import <objc/runtime.h>
 
 
+NSString * const SLCoreDataStackDidPerformMigrationStep = @"SLCoreDataStackDidPerformMigrationStep";
+
+NSString * const SLPreviousModelVersionKey = @"SLPreviousModelVersionKey";
+NSString * const SLCurrentModelVersionKey = @"SLCurrentModelVersionKey";
+NSString * const SLDestinationModelVersionKey = @"SLDestinationModelVersionKey";
 
 NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 
@@ -434,11 +439,12 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
     NSManagedObjectModel *targetModel = nil;
     NSString *modelPath = nil;
 
+    int targetVersion;
     for (modelPath in objectModelPaths) {
         NSURL *modelURL = [NSURL fileURLWithPath:modelPath];
         targetModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
 
-        int targetVersion = [[[targetModel versionIdentifiers] anyObject] intValue];
+        targetVersion = [[[targetModel versionIdentifiers] anyObject] intValue];
         if ( targetVersion != sourceVersion + 1 )
         {
             continue;
@@ -492,6 +498,12 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
     if (![[NSFileManager defaultManager] moveItemAtURL:destinationURL toURL:dataStoreURL error:error]) {
         return NO;
     }
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidPerformMigrationStep
+                                                        object:self
+                                                      userInfo:@{SLPreviousModelVersionKey: @(sourceVersion),
+                                                                 SLCurrentModelVersionKey: @(targetVersion),
+                                                                 SLDestinationModelVersionKey: @(destinationVersion)}];
 
     return [self _performMigrationFromDataStoreAtURL:dataStoreURL
                                   toDestinationModel:destinationModel
