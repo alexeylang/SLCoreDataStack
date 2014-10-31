@@ -398,7 +398,7 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 
     int destinationVersion = [[[destinationModel versionIdentifiers] anyObject] intValue];
     int sourceVersion = [[sourceStoreMetadata[NSStoreModelVersionIdentifiersKey] lastObject] intValue];
-    if ([destinationModel isConfiguration:nil compatibleWithStoreMetadata:sourceStoreMetadata] && destinationVersion == sourceVersion) {
+    if ( destinationVersion == sourceVersion && [destinationModel isConfiguration:nil compatibleWithStoreMetadata:sourceStoreMetadata] ) {
         *error = nil;
         return YES;
     }
