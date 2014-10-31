@@ -27,14 +27,13 @@
 #import <objc/runtime.h>
 
 
+NSString * const SLCoreDataStackWillPerformMigrationStep = @"SLCoreDataStackWillPerformMigrationStep";
 NSString * const SLCoreDataStackDidPerformMigrationStep = @"SLCoreDataStackDidPerformMigrationStep";
 
-NSString * const SLPreviousModelVersionKey = @"SLPreviousModelVersionKey";
-NSString * const SLCurrentModelVersionKey = @"SLCurrentModelVersionKey";
-NSString * const SLDestinationModelVersionKey = @"SLDestinationModelVersionKey";
+NSString * const SLSourceModelVersionKey = @"SLSourceModelVersionKey";
+NSString * const SLTargetModelVersionKey = @"SLTargetModelVersionKey";
 
 NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
-
 
 
 @interface SLCoreDataStack ()
@@ -474,6 +473,11 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
         return NO;
     }
 
+    [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackWillPerformMigrationStep
+                                                        object:self
+                                                      userInfo:@{SLSourceModelVersionKey: @(sourceVersion),
+                                                                 SLTargetModelVersionKey: @(targetVersion)}];
+
     NSMigrationManager *migrationManager = [[NSMigrationManager alloc] initWithSourceModel:sourceModel
                                                                           destinationModel:targetModel];
 
@@ -501,9 +505,8 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 
     [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidPerformMigrationStep
                                                         object:self
-                                                      userInfo:@{SLPreviousModelVersionKey: @(sourceVersion),
-                                                                 SLCurrentModelVersionKey: @(targetVersion),
-                                                                 SLDestinationModelVersionKey: @(destinationVersion)}];
+                                                      userInfo:@{SLSourceModelVersionKey: @(sourceVersion),
+                                                                 SLTargetModelVersionKey: @(targetVersion)}];
 
     return [self _performMigrationFromDataStoreAtURL:dataStoreURL
                                   toDestinationModel:destinationModel

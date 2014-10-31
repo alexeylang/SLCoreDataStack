@@ -26,12 +26,12 @@
 #import <CoreData/CoreData.h>
 #import <Foundation/Foundation.h>
 
+extern NSString * const SLCoreDataStackWillPerformMigrationStep;
 extern NSString * const SLCoreDataStackDidPerformMigrationStep;
 
 /** User info keys for SLCoreDataStackDidPerformMigrationStep: the values for these keys are numbers for model versions. */
-extern NSString * const SLPreviousModelVersionKey;
-extern NSString * const SLCurrentModelVersionKey;
-extern NSString * const SLDestinationModelVersionKey;
+extern NSString * const SLSourceModelVersionKey;
+extern NSString * const SLTargetModelVersionKey;
 
 
 extern NSString *const SLCoreDataStackErrorDomain;
