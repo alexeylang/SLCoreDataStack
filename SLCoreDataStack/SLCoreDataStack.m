@@ -33,7 +33,8 @@ NSString * const SLCoreDataStackDidPerformMigrationStep = @"SLCoreDataStackDidPe
 NSString * const SLSourceModelVersionKey = @"SLSourceModelVersionKey";
 NSString * const SLTargetModelVersionKey = @"SLTargetModelVersionKey";
 
-NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
+NSString * const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
+NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackDidMergeChangesNotification";
 
 
 @interface SLCoreDataStack ()
@@ -530,6 +531,7 @@ NSString *const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
                 }
                 // Merge notification.
                 [otherContext mergeChangesFromContextDidSaveNotification:notification];
+                [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidMergeChangesNotification object:nil];
             }];
         }
     }

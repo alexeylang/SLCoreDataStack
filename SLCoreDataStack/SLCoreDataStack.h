@@ -35,6 +35,7 @@ extern NSString * const SLTargetModelVersionKey;
 
 
 extern NSString *const SLCoreDataStackErrorDomain;
+extern NSString *const SLCoreDataStackDidMergeChangesNotification;
 
 enum {
     SLCoreDataStackMappingModelNotFound = 1,
