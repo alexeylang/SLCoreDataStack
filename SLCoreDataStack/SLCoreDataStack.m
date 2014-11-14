@@ -25,6 +25,7 @@
 
 #import "SLCoreDataStack.h"
 #import <objc/runtime.h>
+#import <stdio.h>
 
 
 NSString * const SLCoreDataStackWillPerformMigrationStep = @"SLCoreDataStackWillPerformMigrationStep";
@@ -503,11 +504,9 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
                                                                  SLSourceModelVersionKey: @(sourceVersion),
                                                                  SLTargetModelVersionKey: @(targetVersion)}];
 
-    if (![[NSFileManager defaultManager] removeItemAtURL:dataStoreURL error:error]) {
-        return NO;
-    }
-
-    if (![[NSFileManager defaultManager] moveItemAtURL:destinationURL toURL:dataStoreURL error:error]) {
+    // atomically replace main store with successfully migrated store
+    if ( 0 != rename([[destinationURL path] cStringUsingEncoding:NSUTF8StringEncoding], [[dataStoreURL path] cStringUsingEncoding:NSUTF8StringEncoding]) )
+    {
         return NO;
     }
 
