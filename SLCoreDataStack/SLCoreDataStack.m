@@ -32,6 +32,7 @@ NSString * const SLCoreDataStackDidPerformMigrationStep = @"SLCoreDataStackDidPe
 
 NSString * const SLSourceModelVersionKey = @"SLSourceModelVersionKey";
 NSString * const SLTargetModelVersionKey = @"SLTargetModelVersionKey";
+NSString * const SLTemporaryDataStoreURL = @"SLTemporaryDataStoreURL";
 
 NSString * const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
 NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackDidMergeChangesNotification";
@@ -496,6 +497,12 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
         return NO;
     }
 
+    [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidPerformMigrationStep
+                                                        object:self
+                                                      userInfo:@{SLTemporaryDataStoreURL: destinationURL,
+                                                                 SLSourceModelVersionKey: @(sourceVersion),
+                                                                 SLTargetModelVersionKey: @(targetVersion)}];
+
     if (![[NSFileManager defaultManager] removeItemAtURL:dataStoreURL error:error]) {
         return NO;
     }
@@ -503,11 +510,6 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
     if (![[NSFileManager defaultManager] moveItemAtURL:destinationURL toURL:dataStoreURL error:error]) {
         return NO;
     }
-
-    [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidPerformMigrationStep
-                                                        object:self
-                                                      userInfo:@{SLSourceModelVersionKey: @(sourceVersion),
-                                                                 SLTargetModelVersionKey: @(targetVersion)}];
 
     return [self _performMigrationFromDataStoreAtURL:dataStoreURL
                                   toDestinationModel:destinationModel

@@ -29,9 +29,11 @@
 extern NSString * const SLCoreDataStackWillPerformMigrationStep;
 extern NSString * const SLCoreDataStackDidPerformMigrationStep;
 
-/** User info keys for SLCoreDataStackDidPerformMigrationStep: the values for these keys are numbers for model versions. */
+/** User info keys for migration notifications; the values for these keys are numbers for model versions. */
 extern NSString * const SLSourceModelVersionKey;
 extern NSString * const SLTargetModelVersionKey;
+/** User info key for SLCoreDataStackDidPerformMigrationStep; the value contains URL for temporary database. */
+extern NSString * const SLTemporaryDataStoreURL;
 
 
 extern NSString *const SLCoreDataStackErrorDomain;
