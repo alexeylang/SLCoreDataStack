@@ -285,6 +285,7 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
         _mainThreadManagedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
         _mainThreadManagedObjectContext.persistentStoreCoordinator = self.persistentStoreCoordinator;
         _mainThreadManagedObjectContext.mergePolicy = self.mainThreadMergePolicy;
+        _mainThreadManagedObjectContext.undoManager = nil;
 
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_managedObjectContextDidSaveNotificationCallback:) name:NSManagedObjectContextDidSaveNotification object:_mainThreadManagedObjectContext];
     }
@@ -309,6 +310,7 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
         _backgroundThreadManagedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
         _backgroundThreadManagedObjectContext.persistentStoreCoordinator = self.persistentStoreCoordinator;
         _backgroundThreadManagedObjectContext.mergePolicy = self.backgroundThreadMergePolicy;
+        _backgroundThreadManagedObjectContext.undoManager = nil;
 
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_managedObjectContextDidSaveNotificationCallback:) name:NSManagedObjectContextDidSaveNotification object:_backgroundThreadManagedObjectContext];
     }
