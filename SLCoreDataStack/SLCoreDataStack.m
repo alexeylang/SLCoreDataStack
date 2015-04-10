@@ -43,6 +43,7 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
 
 @property (nonatomic, readonly) NSURL *_dataStoreRootURL;
 @property (nonatomic, readonly) BOOL requiresMigration;
+@property (nonatomic, strong) NSMutableArray *pendingDeletedObjects;
 
 @end
 
@@ -177,6 +178,15 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
 
 #pragma mark - Memory management
 
+- (instancetype)init
+{
+    if ( self = [super init] )
+    {
+        self.pendingDeletedObjects = [NSMutableArray array];
+    }
+    return self;
+}
+
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -286,8 +296,6 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
         _mainThreadManagedObjectContext.persistentStoreCoordinator = self.persistentStoreCoordinator;
         _mainThreadManagedObjectContext.mergePolicy = self.mainThreadMergePolicy;
         _mainThreadManagedObjectContext.undoManager = nil;
-
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_managedObjectContextDidSaveNotificationCallback:) name:NSManagedObjectContextDidSaveNotification object:_mainThreadManagedObjectContext];
     }
 
     return _mainThreadManagedObjectContext;
@@ -296,11 +304,7 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
 - (void)setMainThreadManagedObjectContext:(NSManagedObjectContext *)mainThreadManagedObjectContext
 {
     if (mainThreadManagedObjectContext != _mainThreadManagedObjectContext) {
-        [[NSNotificationCenter defaultCenter] removeObserver:self name:NSManagedObjectContextDidSaveNotification object:_mainThreadManagedObjectContext];
-
         _mainThreadManagedObjectContext = mainThreadManagedObjectContext;
-
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_managedObjectContextDidSaveNotificationCallback:) name:NSManagedObjectContextDidSaveNotification object:_mainThreadManagedObjectContext];
     }
 }
 
@@ -312,6 +316,7 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
         _backgroundThreadManagedObjectContext.mergePolicy = self.backgroundThreadMergePolicy;
         _backgroundThreadManagedObjectContext.undoManager = nil;
 
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_managedObjectContextWillSaveNotificationCallback:) name:NSManagedObjectContextWillSaveNotification object:_backgroundThreadManagedObjectContext];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_managedObjectContextDidSaveNotificationCallback:) name:NSManagedObjectContextDidSaveNotification object:_backgroundThreadManagedObjectContext];
     }
 
@@ -321,10 +326,12 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
 - (void)setBackgroundThreadManagedObjectContext:(NSManagedObjectContext *)backgroundThreadManagedObjectContext
 {
     if (backgroundThreadManagedObjectContext != _backgroundThreadManagedObjectContext) {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:NSManagedObjectContextWillSaveNotification object:_backgroundThreadManagedObjectContext];
         [[NSNotificationCenter defaultCenter] removeObserver:self name:NSManagedObjectContextDidSaveNotification object:_backgroundThreadManagedObjectContext];
 
         _backgroundThreadManagedObjectContext = backgroundThreadManagedObjectContext;
 
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_managedObjectContextWillSaveNotificationCallback:) name:NSManagedObjectContextWillSaveNotification object:_backgroundThreadManagedObjectContext];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_managedObjectContextDidSaveNotificationCallback:) name:NSManagedObjectContextDidSaveNotification object:_backgroundThreadManagedObjectContext];
     }
 }
@@ -517,26 +524,58 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
                                                error:error];
 }
 
+- (void)_managedObjectContextWillSaveNotificationCallback:(NSNotification *)notification
+{
+    NSManagedObjectContext *changedContext = notification.object;
+    NSManagedObjectContext *otherContext = self.mainThreadManagedObjectContext;
+    if ( changedContext == self.backgroundThreadManagedObjectContext )
+    {
+        NSMutableSet *deletedObjectIDs = [NSMutableSet set];
+        for (NSManagedObject *object in changedContext.deletedObjects)
+        {
+            [deletedObjectIDs addObject:object.objectID];
+        }
+
+        // Explicitly unfault and save (retain) all deleted objects until context did save.
+        // Fix NSObjectInaccessibleException when deleted object is fault in other context.
+        if ( [deletedObjectIDs count] )
+        {
+            [otherContext performBlockAndWait:^{
+                for (NSManagedObjectID *objectID in deletedObjectIDs)
+                {
+                    NSManagedObject *deletedObject = [otherContext existingObjectWithID:objectID error:NULL];
+                    if ( deletedObject )
+                    {
+                        [self.pendingDeletedObjects addObject:deletedObject];
+                    }
+                }
+            }];
+        }
+    }
+}
+
 - (void)_managedObjectContextDidSaveNotificationCallback:(NSNotification *)notification
 {
     NSManagedObjectContext *changedContext = notification.object;
-    for (NSManagedObjectContext *otherContext in @[self.mainThreadManagedObjectContext, self.backgroundThreadManagedObjectContext])
+    NSManagedObjectContext *otherContext = self.mainThreadManagedObjectContext;
+    if ( changedContext == self.backgroundThreadManagedObjectContext )
     {
-        if ( changedContext.persistentStoreCoordinator == otherContext.persistentStoreCoordinator && otherContext != changedContext )
-        {
-            [otherContext performBlockAndWait:^{
-                // Explicitly unfault all updated objects.
-                NSArray *updatedObjects = [[notification.userInfo objectForKey:@"updated"] allObjects];
-                for (NSInteger index = 0; index < [updatedObjects count]; index++)
-                {
-                    NSManagedObjectID *objectID = [updatedObjects[index] objectID];
-                    [otherContext existingObjectWithID:objectID error:NULL];
-                }
-                // Merge notification.
-                [otherContext mergeChangesFromContextDidSaveNotification:notification];
-                [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidMergeChangesNotification object:nil];
-            }];
-        }
+        [otherContext performBlockAndWait:^{
+            // Explicitly unfault all updated objects.
+            NSArray *updatedObjects = [[notification.userInfo objectForKey:@"updated"] allObjects];
+            for (NSInteger index = 0; index < [updatedObjects count]; index++)
+            {
+                NSManagedObjectID *objectID = [updatedObjects[index] objectID];
+                [otherContext existingObjectWithID:objectID error:NULL];
+            }
+
+            // Merge notification.
+            [otherContext mergeChangesFromContextDidSaveNotification:notification];
+            [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidMergeChangesNotification object:nil];
+
+            // Don't retain deleted objects.
+            [self.pendingDeletedObjects removeAllObjects];
+        }];
     }
 }
 
