@@ -36,6 +36,7 @@ NSString * const SLTargetModelVersionKey = @"SLTargetModelVersionKey";
 NSString * const SLTemporaryDataStoreURL = @"SLTemporaryDataStoreURL";
 
 NSString * const SLCoreDataStackErrorDomain = @"SLCoreDataStackErrorDomain";
+NSString * const SLCoreDataStackWillMergeChangesNotification = @"SLCoreDataStackWillMergeChangesNotification";
 NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackDidMergeChangesNotification";
 
 
@@ -570,6 +571,7 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
             }
 
             // Merge notification.
+            [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackWillMergeChangesNotification object:nil];
             [otherContext mergeChangesFromContextDidSaveNotification:notification];
             [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidMergeChangesNotification object:nil];
 

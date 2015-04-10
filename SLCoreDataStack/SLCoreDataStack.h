@@ -37,6 +37,7 @@ extern NSString * const SLTemporaryDataStoreURL;
 
 
 extern NSString *const SLCoreDataStackErrorDomain;
+extern NSString *const SLCoreDataStackWillMergeChangesNotification;
 extern NSString *const SLCoreDataStackDidMergeChangesNotification;
 
 enum {
