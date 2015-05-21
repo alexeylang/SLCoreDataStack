@@ -43,7 +43,6 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
 @interface SLCoreDataStack ()
 
 @property (nonatomic, readonly) NSURL *_dataStoreRootURL;
-@property (nonatomic, readonly) BOOL requiresMigration;
 @property (nonatomic, strong) NSMutableArray *pendingDeletedObjects;
 
 @end

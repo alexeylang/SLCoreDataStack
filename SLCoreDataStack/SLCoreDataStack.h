@@ -85,6 +85,8 @@ enum {
  */
 @property (nonatomic, readonly) NSBundle *bundle;
 
+@property (nonatomic, readonly) BOOL requiresMigration;
+
 /**
  Returns YES if any concrete subclass requires a migration that has been registered with +[SLCoreDataStack registerSubclass:].
  */
