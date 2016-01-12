@@ -572,6 +572,10 @@ NSString * const SLCoreDataStackDidMergeChangesNotification = @"SLCoreDataStackD
             // Merge notification.
             [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackWillMergeChangesNotification object:nil];
             [otherContext mergeChangesFromContextDidSaveNotification:notification];
+
+            // Force processing all changes (mergeChangesFromContextDidSaveNotification: does not do it on OS X for some reason).
+            [otherContext processPendingChanges];
+
             [[NSNotificationCenter defaultCenter] postNotificationName:SLCoreDataStackDidMergeChangesNotification object:nil];
 
             // Don't retain deleted objects.
